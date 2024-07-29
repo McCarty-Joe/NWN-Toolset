@@ -158,8 +158,9 @@ namespace NWN_Toolset
                         uint fieldTypeId = reader.ReadUInt32();
                         uint fieldLabelIndex = reader.ReadUInt32();
                         uint fieldDataOrOffset = reader.ReadUInt32();
+                        string label = labels[(int)fieldLabelIndex];
 
-                        Console.Write($"Field.Type: {fieldTypeId}, Field.LabelIndex: {fieldLabelIndex}, ");
+                        Console.Write($"Field.Type: {fieldTypeId}, FieldIndex: {fieldLabelIndex}, Label: {label}, Value: ");
 
                         long pos = reader.BaseStream.Position; 
                         if (fieldTypeId < 14)
@@ -171,12 +172,12 @@ namespace NWN_Toolset
                         {
                             
                         }
-                        else if(fieldTypeId == 15)
+                        else if(fieldTypeId == 15) 
                         {
                             
                             reader.BaseStream.Seek(listIndicesOffset + fieldDataOrOffset, SeekOrigin.Begin);
                             uint numStructsInList = reader.ReadUInt32();
-                            Console.Write($"NumStructs in List: {numStructsInList}");
+                            Console.WriteLine($"NumStructs in List: {numStructsInList}");
 
                             for(i = 0; i < numStructsInList; i++)
                             {
@@ -305,9 +306,12 @@ namespace NWN_Toolset
         {
             StringBuilder stringBuilder = new StringBuilder();
             char currentChar;
-            while ((currentChar = reader.ReadChar()) != '\0')
+            while (stringBuilder.Length < 16)
             {
-                stringBuilder.Append(currentChar);
+                if ((currentChar = reader.ReadChar()) != '\0')
+                    stringBuilder.Append(currentChar);
+                else
+                    break;
             }
             return stringBuilder.ToString();
         }
