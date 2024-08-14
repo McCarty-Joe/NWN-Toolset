@@ -80,28 +80,38 @@ namespace NWN_Toolset
             internal List<Struct> Struct { get; set; } = new List<Struct>();
         }
 
-        static void Main()
+        struct GFFFile
+        {
+            internal Header header;
+            internal List<Struct> structs;
+            internal List<Field> fields;
+            internal List<string> labels;
+        }
+
+        static void Main(string[] args)
         {
            //string filePath = "C:\\Users\\joemc\\Documents\\Neverwinter Nights\\modules\\temp0\\warham_crusher20.uti";
-             string filePath = "C:\\Users\\joemc\\source\\repos\\NWN Toolset\\GFF\\warham_crusher20.uti";
-            //string filePath = "C:\\Users\\joemc\\source\\repos\\NWN Toolset\\GFF\\abyssianvampire.utc";
-            ReadUtiFile(filePath);
+            // string filePath = "C:\\Users\\joemc\\source\\repos\\NWN Toolset\\GFF\\warham_crusher20.uti";
+            string filePath = "C:\\Users\\joemc\\source\\repos\\NWN Toolset\\GFF\\abyssianvampire.utc";
+            // string filePath = "C:\\Users\\joemc\\source\\repos\\NWN Toolset\\GFF\\creaturepalcus.itp";
+            GFFFile file = ReadGFFFile(filePath);
             Console.WriteLine($"Done reading GFF file: {filePath}");
         }
 
-        static void ReadUtiFile(string filePath)
+        static GFFFile ReadGFFFile(string filePath, bool verbose = false)
         {
-            
+            GFFFile file = new GFFFile();
             try
             {
                 using (BinaryReader reader = new BinaryReader(File.OpenRead(filePath)))
                 {
                     long fileSize = reader.BaseStream.Length;
+                    
                     //** Header **//
                     Header header = ReadHeaders(reader);
 
                     //** Structs **//
-                    List<Struct> structs = ReadStructs(reader, header);
+                    List<Struct> structs = ReadStructs(reader, header); 
 
                     /** Labels **/
                     List<string> labels = ReadLabels(reader, header);
@@ -109,15 +119,125 @@ namespace NWN_Toolset
                     //** Field **//
                     List<Field> fields = ReadFields(reader, header, labels, structs);
 
-                    AssembleStructs(structs, fields);                                      
+                    AssembleStructs(structs, fields);         
+                    
+                    file.header = header;
+                    file.structs = structs;
+                    file.fields = fields;
+                    file.labels = labels;
 
                     Console.WriteLine("done reading file");
                 }
+
+                
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error reading GFF file: {ex.Message}");
             }
+
+            return file;
+        }
+
+        static Header ReadHeaders(BinaryReader reader)
+        {
+            reader.BaseStream.Position = 0;
+
+            string gffType = Encoding.UTF8.GetString(reader.ReadBytes(4));
+            string version = Encoding.UTF8.GetString(reader.ReadBytes(4));
+
+            //** GFF File Type & Version **//
+            //string gffType = Encoding.UTF8.GetString(reader.ReadBytes(4));
+            //if (gffType.Trim() != "UTI" && gffType.Trim() != "UTC")
+            //{
+            //    Console.WriteLine($"Invalid GFF file: {filePath}");
+            //    return;
+            //}
+
+            //string version = Encoding.UTF8.GetString(reader.ReadBytes(4));
+            //if (version.Trim() != "V3.2")
+            //{
+            //    Console.WriteLine($"Invalid GFF file: {filePath}");
+            //    return;
+            //}
+
+            Console.WriteLine($"File Type: {gffType}, Version: {version}");
+            UInt32 structOffset = reader.ReadUInt32();
+            UInt32 structCount = reader.ReadUInt32();
+            UInt32 fieldOffset = reader.ReadUInt32();
+            UInt32 fieldCount = reader.ReadUInt32();
+            UInt32 labelOffset = reader.ReadUInt32();
+            UInt32 labelCount = reader.ReadUInt32();
+            UInt32 fieldDataOffset = reader.ReadUInt32();
+            UInt32 fieldDataCount = reader.ReadUInt32();
+            UInt32 fieldIndicesOffset = reader.ReadUInt32();
+            UInt32 fieldIndicesCount = reader.ReadUInt32();
+            UInt32 listIndicesOffset = reader.ReadUInt32();
+            UInt32 listIndicesCount = reader.ReadUInt32();
+
+            Header header = new Header();
+            header.GFFType = gffType;
+            header.Version = version;
+            header.StructOffset = structOffset;
+            header.StructCount = structCount;
+            header.FieldOffset = fieldOffset;
+            header.FieldCount = fieldCount;
+            header.LabelOffset = labelOffset;
+            header.LabelCount = labelCount;
+            header.FieldDataOffset = fieldDataOffset;
+            header.FieldDataCount = fieldDataCount;
+            header.FieldIndicesOffset = fieldIndicesOffset;
+            header.FieldIndicesCount = fieldIndicesCount;
+            header.ListIndicesOffset = listIndicesOffset;
+            header.ListIndicesCount = listIndicesCount;
+
+            return header;
+        }
+
+        static List<Struct> ReadStructs(BinaryReader reader, Header header)
+        {
+            reader.BaseStream.Seek(header.StructOffset, SeekOrigin.Begin);
+
+            List<Struct> structs = new List<Struct>();
+            while (reader.BaseStream.Position < header.FieldOffset)
+            {
+                int structId = (int)reader.ReadUInt32();
+
+                if (structId == reader.BaseStream.Length)
+                    structId = -1;
+
+                uint structDataOffset = reader.ReadUInt32();
+                uint structFieldCount = reader.ReadUInt32();
+
+                Struct gffstruct = new Struct();
+                gffstruct.Id = structId;
+                gffstruct.DataOrDataOffset = structDataOffset;
+                gffstruct.FieldCount = structFieldCount;
+                gffstruct.Field = new List<Field>((int)structFieldCount);
+
+                structs.Add(gffstruct);
+
+                Console.WriteLine($"Struct.Type: {structId}, Struct.DataOrDataOffset: {structDataOffset}, Struct.FieldCount: {structFieldCount}");
+            }
+
+            return structs;
+        }
+
+        static List<string> ReadLabels(BinaryReader reader, Header header)
+        {
+            List<string> labels = new List<string>();
+            reader.BaseStream.Seek(header.LabelOffset, SeekOrigin.Begin);
+
+            // Read labels
+            while (reader.BaseStream.Position < header.FieldDataOffset)
+            {
+                string label = ReadNullTerminatedString(reader);
+                if (!string.IsNullOrEmpty(label))
+                {
+                    labels.Add(label);
+                }
+            }
+            return labels; // Ordered by field index
         }
 
         static object InterpretField(BinaryReader reader, uint typeId, uint dataOrOffset, uint fieldDataOffset)
@@ -209,51 +329,6 @@ namespace NWN_Toolset
             return fieldValue;
          }
 
-        static List<Struct> AssembleStructs(List<Struct> structs, List<Field> fields)
-        {
-            for(int i = 0; i < fields.Count;i++) 
-            {
-                if (fields[i].Type == (uint)FieldType.List)
-                {
-                    // This is a list. First determine how many structs are in it.
-                    GFFList tmpList = (GFFList)fields[i].Value;
-                    int structCount = tmpList.Struct.Count;
-
-                    // Now add the list to the top level struct
-                    structs[0].Field.Add(fields[i]);
-                    // Remember the placement of this field in the top level struct
-                    int fieldIndex = i;
-                    // Iterate to the next field which should be in a sub-struct
-                    i++;
-
-                    // Assign the fields to the sub-struct
-                    foreach (Struct s in tmpList.Struct)
-                    {
-                        // Get the number of fields in this struct
-                        int fieldCount = (int)s.FieldCount;
-                        for(int j = 0;j< fieldCount; j++)
-                        {
-                            s.Field.Add(fields[i]);
-                            if (j < fieldCount) i++; // Increment unless we're on the last one.
-                        }
-                    }
-                    i--;
-
-                    // Finally replace the original list with the tmp list which as the fields
-                    // structs[0].Field[fieldIndex].Value = tmpList;
-                }
-                else 
-                {
-                    // Add to top level struct
-                    structs[0].Field.Add(fields[i]);
-                }
-
-                
-            }
-
-            return structs;
-        }
-
         static List<Field> ReadFields(BinaryReader reader, Header header, List<string> labels, List<Struct> structs)
         {
 
@@ -315,21 +390,20 @@ namespace NWN_Toolset
 
                 fields.Add(field);
 
-                
+
             }
             return fields;
         }
-        
+
         static GFFList ReadList(BinaryReader reader, Header header, uint offset, List<Struct> structs)
         {
             reader.BaseStream.Seek(header.ListIndicesOffset + offset, SeekOrigin.Begin);
-            
+
             uint numStructsInList = reader.ReadUInt32();
             Console.WriteLine($"NumStructs in List: {numStructsInList}");
 
             GFFList gFFList = new GFFList();
-            // gFFList.Struct = new List<Struct>((int)numStructsInList);
-            for (int i = 0; i < numStructsInList; i++) 
+            for (int i = 0; i < numStructsInList; i++)
             {
                 int structIndex = (int)reader.ReadUInt32();
                 gFFList.Struct.Add(structs[structIndex]);
@@ -338,90 +412,51 @@ namespace NWN_Toolset
             return gFFList;
         }
 
-        static Header ReadHeaders(BinaryReader reader)
+        static List<Struct> AssembleStructs(List<Struct> structs, List<Field> fields)
         {
-            reader.BaseStream.Position = 0;
-
-            string gffType = Encoding.UTF8.GetString(reader.ReadBytes(4));
-            string version = Encoding.UTF8.GetString(reader.ReadBytes(4));
-            UInt32 structOffset = reader.ReadUInt32();
-            UInt32 structCount = reader.ReadUInt32();
-            UInt32 fieldOffset = reader.ReadUInt32();
-            UInt32 fieldCount = reader.ReadUInt32();
-            UInt32 labelOffset = reader.ReadUInt32();
-            UInt32 labelCount = reader.ReadUInt32();
-            UInt32 fieldDataOffset = reader.ReadUInt32();
-            UInt32 fieldDataCount = reader.ReadUInt32();
-            UInt32 fieldIndicesOffset = reader.ReadUInt32();
-            UInt32 fieldIndicesCount = reader.ReadUInt32();
-            UInt32 listIndicesOffset = reader.ReadUInt32();
-            UInt32 listIndicesCount = reader.ReadUInt32();
-
-            Header header = new Header();
-            header.GFFType = gffType;
-            header.Version = version;
-            header.StructOffset = structOffset;
-            header.StructCount = structCount;
-            header.FieldOffset = fieldOffset;
-            header.FieldCount = fieldCount;
-            header.LabelOffset = labelOffset;
-            header.LabelCount = labelCount;
-            header.FieldDataOffset = fieldDataOffset;
-            header.FieldDataCount = fieldDataCount;
-            header.FieldIndicesOffset = fieldIndicesOffset;
-            header.FieldIndicesCount = fieldIndicesCount;
-            header.ListIndicesOffset = listIndicesOffset;
-            header.ListIndicesCount = listIndicesCount;
-
-            return header;
-        }
-
-        static List<Struct> ReadStructs(BinaryReader reader, Header header)
-        {
-            reader.BaseStream.Seek(header.StructOffset, SeekOrigin.Begin);
-            
-            List<Struct> structs = new List<Struct>();
-            while (reader.BaseStream.Position < header.FieldOffset)
+            for(int i = 0; i < fields.Count;i++) 
             {
-                int structId = (int)reader.ReadUInt32();
+                if (fields[i].Type == (uint)FieldType.List)
+                {
+                    // This is a list. First determine how many structs are in it.
+                    GFFList tmpList = (GFFList)fields[i].Value;
+                    int structCount = tmpList.Struct.Count;
 
-                if (structId == reader.BaseStream.Length)
-                    structId = -1;
+                    // Now add the list to the top level struct
+                    structs[0].Field.Add(fields[i]);
+                    // Remember the placement of this field in the top level struct
+                    int fieldIndex = i;
+                    // Iterate to the next field which should be in a sub-struct
+                    i++;
 
-                uint structDataOffset = reader.ReadUInt32();
-                uint structFieldCount = reader.ReadUInt32();
+                    // Assign the fields to the sub-struct
+                    foreach (Struct s in tmpList.Struct)
+                    {
+                        // Get the number of fields in this struct
+                        int fieldCount = (int)s.FieldCount;
+                        for(int j = 0;j< fieldCount; j++)
+                        {
+                            s.Field.Add(fields[i]);
+                            if (j < fieldCount) i++; // Increment unless we're on the last one.
+                        }
+                    }
+                    i--;
 
-                Struct gffstruct = new Struct();
-                gffstruct.Id = structId;
-                gffstruct.DataOrDataOffset = structDataOffset;
-                gffstruct.FieldCount = structFieldCount;
-                gffstruct.Field = new List<Field>((int)structFieldCount);
+                    // Finally replace the original list with the tmp list which as the fields
+                    // structs[0].Field[fieldIndex].Value = tmpList;
+                }
+                else 
+                {
+                    // Add to top level struct
+                    structs[0].Field.Add(fields[i]);
+                }
 
-                structs.Add(gffstruct);
-
-                Console.WriteLine($"Struct.Type: {structId}, Struct.DataOrDataOffset: {structDataOffset}, Struct.FieldCount: {structFieldCount}");
+                
             }
 
             return structs;
         }
-
-        static List<string> ReadLabels (BinaryReader reader, Header header)
-        {
-            List<string> labels = new List<string>();
-            reader.BaseStream.Seek(header.LabelOffset, SeekOrigin.Begin);
-
-            // Read labels
-            while (reader.BaseStream.Position < header.FieldDataOffset)
-            {
-                string label = ReadNullTerminatedString(reader);
-                if (!string.IsNullOrEmpty(label))
-                {
-                    labels.Add(label);                    
-                }
-            }
-            return labels; // Ordered by field index
-        }
-
+        
         static string ReadNullTerminatedString(BinaryReader reader)
         {
             StringBuilder stringBuilder = new StringBuilder();
@@ -476,8 +511,7 @@ namespace NWN_Toolset
             }
             return stringBuilder.ToString();
         }
-
-        
+                
     }
 }
 
