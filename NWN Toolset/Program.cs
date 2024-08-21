@@ -91,11 +91,12 @@ namespace NWN_Toolset
         static void Main(string[] args)
         {
            //string filePath = "C:\\Users\\joemc\\Documents\\Neverwinter Nights\\modules\\temp0\\warham_crusher20.uti";
-            // string filePath = "C:\\Users\\joemc\\source\\repos\\NWN Toolset\\GFF\\warham_crusher20.uti";
-            string filePath = "C:\\Users\\joemc\\source\\repos\\NWN Toolset\\GFF\\abyssianvampire.utc";
-            // string filePath = "C:\\Users\\joemc\\source\\repos\\NWN Toolset\\GFF\\creaturepalcus.itp";
+           // string filePath = "C:\\Users\\joemc\\source\\repos\\NWN Toolset\\GFF\\warham_crusher20.uti";
+           string filePath = "C:\\Users\\joemc\\source\\repos\\NWN Toolset\\GFF\\siron19.bic";
+           //string filePath = "C:\\Users\\joemc\\source\\repos\\NWN Toolset\\GFF\\abyssianvampire.utc";
+           // string filePath = "C:\\Users\\joemc\\source\\repos\\NWN Toolset\\GFF\\creaturepalcus.itp";
             GFFFile file = ReadGFFFile(filePath);
-            Console.WriteLine($"Done reading GFF file: {filePath}");
+           Console.WriteLine($"Done reading GFF file: {filePath}");
         }
 
         static GFFFile ReadGFFFile(string filePath, bool verbose = false)
