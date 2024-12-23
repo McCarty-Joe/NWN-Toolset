@@ -46,6 +46,8 @@ namespace NWN_Toolset
         }
     }
 
+
+
     public class Header
     {
         public string GFFType { get; set; }
@@ -124,9 +126,29 @@ namespace NWN_Toolset
 
         public static void AssembleStructs(List<Struct> structs, List<Field> fields)
         {
+            int n = 0;
             for (int i = 0; i < fields.Count; i++)
             {
-                // Implementation of AssembleStructs logic here...
+                
+                if (fields[i].Type == (int)FieldType.List)
+                {
+                    int nStructsInList = (int)fields[i].Value;
+                    for (int j = 0; j < nStructsInList; j++)
+                    {
+                        i++;
+                        n++; // Next use next nested struct
+                        for (int k = 0; k < structs[n].FieldCount; k++)
+                        {
+                            structs[n].Fields.Add(fields[i]);
+                            i++;
+                        }
+                    }
+
+                }
+                else
+                {
+                    structs[0].Fields.Add(fields[i]);
+                }
             }
         }
     }
@@ -351,4 +373,6 @@ namespace NWN_Toolset
         public List<Field> Fields { get; set; }
         public List<string> Labels { get; set; }
     }
+
+
 }
