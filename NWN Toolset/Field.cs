@@ -155,6 +155,8 @@ namespace NWN_Toolset
 
         private static string ReadExoLocString(BinaryReader reader, uint numSubStrings)
         {
+            if (numSubStrings == 0)
+                return string.Empty;
             uint strId = reader.ReadUInt32();
             uint length = reader.ReadUInt32();
             return new string(reader.ReadChars((int)length));
