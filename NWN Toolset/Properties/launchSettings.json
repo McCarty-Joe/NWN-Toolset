@@ -1,0 +1,9 @@
+{
+  "profiles": {
+    "NWN Toolset": {
+      "commandName": "Project",
+      "commandLineArgs": "\"m\"",
+      "workingDirectory": "C:\\Users\\joemc\\source\\repos\\NWN Toolset"
+    }
+  }
+}
