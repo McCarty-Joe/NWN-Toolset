@@ -9,17 +9,17 @@ namespace NWN_Toolset
 {
     public class GFFReader
     {
-        public static GFFFile ReadGFFFile(string filePath)
+        public static GFFFile ReadGFFFile(string filePath, bool verbose = true)
         {
             GFFFile file = new GFFFile();
             try
             {
                 using (BinaryReader reader = new BinaryReader(File.OpenRead(filePath)))
                 {
-                    Header header = Header.Read(reader);
-                    List<Struct> structs = Struct.Read(reader, header);
+                    Header header = Header.Read(reader, verbose);
+                    List<Struct> structs = Struct.Read(reader, header, verbose);
                     List<string> labels = Label.Read(reader, header);
-                    List<Field> fields = Field.Read(reader, header, labels, structs);
+                    List<Field> fields = Field.Read(reader, header, labels, structs, verbose);
 
                     Struct.AssembleStructs(structs, fields);
 

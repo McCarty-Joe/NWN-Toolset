@@ -14,7 +14,7 @@ namespace NWN_Toolset
         public UInt32 FieldCount { get; set; }
         public List<Field> Fields { get; set; }
 
-        public static List<Struct> Read(BinaryReader reader, Header header)
+        public static List<Struct> Read(BinaryReader reader, Header header, bool verbose = true)
         {
             List<Struct> structs = new List<Struct>();
             reader.BaseStream.Seek(header.StructOffset, SeekOrigin.Begin);
@@ -33,7 +33,7 @@ namespace NWN_Toolset
                     Fields = new List<Field>((int)fieldCount)
                 });
 
-                Console.WriteLine($"Struct.Type: {structId}, Struct.DataOrDataOffset: {dataOffset}, Struct.FieldCount: {fieldCount}");
+                if(verbose) Console.WriteLine($"Struct.Type: {structId}, Struct.DataOrDataOffset: {dataOffset}, Struct.FieldCount: {fieldCount}");
             }
 
             return structs;

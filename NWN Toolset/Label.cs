@@ -26,7 +26,7 @@ namespace NWN_Toolset
         }
 
         private static string ReadNullTerminatedString(BinaryReader reader)
-        {
+        { 
             StringBuilder stringBuilder = new StringBuilder();
             char currentChar;
             while (stringBuilder.Length < 16)

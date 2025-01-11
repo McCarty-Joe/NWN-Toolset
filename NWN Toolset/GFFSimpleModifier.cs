@@ -66,7 +66,7 @@ namespace NWN_Toolset
 
 
                     }
-                    Console.WriteLine($"No field with name '{propertyName}' and value {oldValue} found to modify.");
+                     Console.WriteLine($"No field with name '{propertyName}' and value {oldValue} found to modify.");
                 }
             }
             catch (Exception ex)
@@ -154,11 +154,11 @@ namespace NWN_Toolset
             }
         }
 
-        public static void ModifyItemPropertiesList(string filePath, ItemProperty.Property currentIP, ItemProperty newIP, int addCost = 0)
+        public static void ModifyItemPropertiesList(string filePath, ItemProperty.Property currentIP, ItemProperty newIP, int addCost = 0, bool verbose = true)
         {
             try
             {
-                GFFFile file = GFFReader.ReadGFFFile(filePath);
+                GFFFile file = GFFReader.ReadGFFFile(filePath, verbose);
                 using (var stream = new FileStream(filePath, FileMode.Open, FileAccess.ReadWrite))
                 using (var reader = new BinaryReader(stream))
                 using (var writer = new BinaryWriter(stream))
@@ -174,6 +174,7 @@ namespace NWN_Toolset
                     // List<string> labels = Label.Read(reader, header);
                     List<string> labels = file.Labels;
 
+                    // Get a list of fields
                     List<Field> fields = file.Fields;
 
                     reader.BaseStream.Seek(header.FieldOffset, SeekOrigin.Begin);
@@ -181,7 +182,7 @@ namespace NWN_Toolset
                     long fieldStartPosition = header.FieldOffset;
                     long fieldPosition = fieldStartPosition;
                     long? costPosition = null;
-                    long? namePosition = null;
+                    string itemName = string.Empty;
 
                     for (int i = 0; i < header.FieldCount; i++)
                     {
@@ -196,12 +197,9 @@ namespace NWN_Toolset
 
                             string label = labels[(int)labelIndex];
 
-                            
-                            string itemName = string.Empty;
-
                             if (label == "LocalizedName")
                             {
-                                itemName = (string)fields[i].Value; 
+                                itemName = (string)fields[i].Value;
                             }
 
                             if (label == "AddCost" && addCost > 0)
@@ -220,8 +218,8 @@ namespace NWN_Toolset
                                 {
                                     
                                     writer.Write((UInt32)Convert.ToInt32(property.Value));
-                                    UInt32 whatisthis1 = reader.ReadUInt32();
-                                    UInt32 whatisthis2 = reader.ReadUInt32();
+                                    UInt32 read1 = reader.ReadUInt32();
+                                    UInt32 read2 = reader.ReadUInt32();
                                 }
 
                                 if(addCost > 0 && costPosition != null)
@@ -240,7 +238,7 @@ namespace NWN_Toolset
 
 
                     }
-                    Console.WriteLine($"No field Properties list with the property name {currentIP} found to modify.");
+                    if (verbose) Console.WriteLine($"No field Properties list with the property name {currentIP} found to modify.");
                 }
             }
             catch (Exception ex)

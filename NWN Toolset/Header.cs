@@ -24,7 +24,7 @@ namespace NWN_Toolset
         public UInt32 ListIndicesOffset { get; set; }
         public UInt32 ListIndicesCount { get; set; }
 
-        public static Header Read(BinaryReader reader)
+        public static Header Read(BinaryReader reader, bool verbose = true)
         {
             reader.BaseStream.Position = 0;
 
@@ -46,7 +46,9 @@ namespace NWN_Toolset
                 ListIndicesCount = reader.ReadUInt32()
             };
 
-            Console.WriteLine($"File Type: {header.GFFType}, Version: {header.Version}");
+            if(verbose)
+                Console.WriteLine($"File Type: {header.GFFType}, Version: {header.Version}");
+
             return header;
         }
     }

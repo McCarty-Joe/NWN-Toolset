@@ -16,7 +16,7 @@ namespace NWN_Toolset
         public object Value { get; set; }
         public int StructIndex { get; set; }
 
-        public static List<Field> Read(BinaryReader reader, Header header, List<string> labels, List<Struct> structs)
+        public static List<Field> Read(BinaryReader reader, Header header, List<string> labels, List<Struct> structs, bool verbose = true)
         {
             List<Field> fields = new List<Field>();
             reader.BaseStream.Seek(header.FieldOffset, SeekOrigin.Begin);
@@ -36,7 +36,7 @@ namespace NWN_Toolset
                     Name = labels[(int)labelIndex]  // Use labelIndex here since it's already read
                 };
 
-                Console.Write($"Field.Type: {field.Type}, LabelIndex: {field.LabelIndex}, Label: {field.Name}, Value: ");
+                if (verbose) Console.Write($"Field.Type: {field.Type}, LabelIndex: {field.LabelIndex}, Label: {field.Name}, Value: ");
 
                 // Store the reader position
                 long pos = reader.BaseStream.Position;
@@ -44,7 +44,7 @@ namespace NWN_Toolset
                 if (field.Type < 14)
                 {
                     field.Value = InterpretField(reader, field.Type, field.DataOrDataOffset, header.FieldDataOffset);
-                    Console.WriteLine(field.Value);
+                    if(verbose) Console.WriteLine(field.Value);
                     reader.BaseStream.Position = pos; // Restore position
                 }
                 else if (field.Type == (uint)FieldType.Struct)
@@ -53,8 +53,7 @@ namespace NWN_Toolset
                 }
                 else if (field.Type == (uint)FieldType.List)
                 {
-                    field.Value = ReadList(reader, header, field.DataOrDataOffset, structs).Struct.Count;
-                    // Console.WriteLine(field.Value);
+                    field.Value = ReadList(reader, header, field.DataOrDataOffset, structs, verbose).Struct.Count;
                     reader.BaseStream.Position = pos; // Restore position
                 }
                 else
@@ -121,11 +120,11 @@ namespace NWN_Toolset
             }
         }
 
-        private static GFFList ReadList(BinaryReader reader, Header header, uint offset, List<Struct> structs)
+        private static GFFList ReadList(BinaryReader reader, Header header, uint offset, List<Struct> structs, bool verbose = true)
         {
             reader.BaseStream.Seek(header.ListIndicesOffset + offset, SeekOrigin.Begin);
             uint numStructsInList = reader.ReadUInt32();
-            Console.WriteLine($"NumStructs in List: {numStructsInList}");
+            if(verbose) Console.WriteLine($"NumStructs in List: {numStructsInList}");
 
             GFFList gffList = new GFFList();
             for (int i = 0; i < numStructsInList; i++)
