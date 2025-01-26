@@ -1,7 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Text;
+using System.Linq;
+using static System.Net.WebRequestMethods;
 
 namespace NWN_Toolset
 {
@@ -9,12 +9,10 @@ namespace NWN_Toolset
     {
         static void Main(string[] args)
         {
-            /*
-            //string filePath = "C:\\Users\\joemc\\Documents\\Neverwinter Nights\\modules\\temp0\\item028.uti";
-            // string filePath = "C:\\Users\\joemc\\Source\\repos\\NWN Toolset\\GFF\\aarcl007.uti";
-            // GFFFile file2 = GFFReader.ReadGFFFile(filePath);
-
-            // GFFModifier.ModifyItemProperty(filePath, "PropertyName", 71, 35);
+            /* Single file test
+           
+            string filePath = "C:\\Users\\joemc\\Source\\repos\\NWN Toolset\\GFF\\js_bndofstruct40.uti";
+            GFFFile file = GFFReader.ReadGFFFile(filePath);
 
             //GFFModifier.ModifyItemProperty(filePath, "PaletteID", 23, 221, [65]); // w/ base item restriction
 
@@ -51,16 +49,36 @@ namespace NWN_Toolset
               {
                   try
                   {
-                      //Console.WriteLine($"Processing file: {filePath}");
-                      if (args[0] == "r")
-                          GFFReader.ReadGFFFile(filePath);
-                      else if (args[0] == "m")
-                      {
-                          //GFFModifier.ModifyItemProperty(filePath, "PaletteID", -1, 221, new int[] { 65 }); // Keys to the key node
-                          ItemProperty seeInvisibility = ItemProperty.CreateSeeInvisibility();
-                          GFFModifier.ModifyItemPropertiesList(filePath, ItemProperty.Property.TrueSeeing, seeInvisibility, 32034, false); //true seeing to see inviz x3/day w/ cost 32034
-                          // Console.WriteLine($"Successfully processed: {filePath}");
-                      }
+                    //Console.WriteLine($"Processing file: {filePath}");
+                    if (args[0] == "r")
+                    {
+                        GFFFile file = GFFReader.ReadGFFFile(filePath, false);
+                        
+                        // TODO: Move property finder to a class
+                        for (int i = 1; i < file.Structs.Count; i++)
+                        {
+
+                            if (file.Structs[i].Fields[0].Name == "PropertyName" && (int)file.Structs[i].Fields[0].Value == 20)
+                            {
+                                for (int j = 1; j < file.Structs[i].Fields.Count; j++)
+                                {
+                                    if (file.Structs[i].Fields[j].Name == "CostValue" && (int)file.Structs[i].Fields[j].Value > 2)
+                                    {
+                                        string itemName = (string)file.Structs[0].Fields.FirstOrDefault(f => f.Name == "LocalizedName")?.Value;
+                                        Console.WriteLine(itemName);
+                                    }
+                                }
+
+                            }
+                        }
+                    }
+                    else if (args[0] == "m")
+                    {
+                        //GFFModifier.ModifyItemProperty(filePath, "PaletteID", -1, 221, new int[] { 65 }); // Keys to the key node
+                        ItemProperty seeInvisibility = ItemProperty.CreateSeeInvisibility();
+                        GFFModifier.ModifyItemPropertiesList(filePath, ItemProperty.Property.TrueSeeing, seeInvisibility, 32034, false); //true seeing to see inviz x3/day w/ cost 32034
+                                                                                                                                         // Console.WriteLine($"Successfully processed: {filePath}");
+                    }
                   }
                   catch (Exception ex)
                   {

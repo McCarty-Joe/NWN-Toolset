@@ -38,6 +38,8 @@ namespace NWN_Toolset
 
                 if (verbose) Console.Write($"Field.Type: {field.Type}, LabelIndex: {field.LabelIndex}, Label: {field.Name}, Value: ");
 
+                
+
                 // Store the reader position
                 long pos = reader.BaseStream.Position;
 

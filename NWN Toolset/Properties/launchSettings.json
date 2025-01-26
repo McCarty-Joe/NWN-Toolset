@@ -2,7 +2,7 @@
   "profiles": {
     "NWN Toolset": {
       "commandName": "Project",
-      "commandLineArgs": "\"m\"",
+      "commandLineArgs": "\"r\"",
       "workingDirectory": "C:\\Users\\joemc\\source\\repos\\NWN Toolset"
     }
   }
